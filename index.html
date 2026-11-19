@@ -6,7 +6,7 @@
 <title>Training planner</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🏊%3C/text%3E%3C/svg%3E">
 <style>
-:root{--bg:#f6f7f9;--card:#fff;--ink:#16181d;--mute:#6b7280;--line:#e3e6ea;--acc:#0b6bcb;--swim:#2a8bd8;--bike:#e8872b;--run:#2fa66a;--brick:#8a5cd6;--strength:#d6567a;--other:#7a8594;color-scheme:light}
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16181d;--mute:#6b7280;--line:#e3e6ea;--acc:#0b6bcb;--swim:#2a8bd8;--bike:#e8872b;--run:#2fa66a;--strength:#d6567a;--other:#7a8594;color-scheme:light}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111317;--card:#1b1e24;--ink:#eceef2;--mute:#9aa3b0;--line:#2c313a;--acc:#5aa9f5;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#111317;--card:#1b1e24;--ink:#eceef2;--mute:#9aa3b0;--line:#2c313a;--acc:#5aa9f5;color-scheme:dark}
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -30,7 +30,7 @@ button.danger{color:#d64545}
 .add{padding:0 9px;font-size:18px;line-height:26px}
 .race{background:#f5c84233;border:1px solid #f5c842;border-radius:8px;padding:3px 8px;font-size:13px;font-weight:600}
 .chip{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-left:4px solid var(--other);border-radius:8px;padding:6px 8px;cursor:pointer;background:var(--bg)}
-.chip.swim{border-left-color:var(--swim)}.chip.bike{border-left-color:var(--bike)}.chip.run{border-left-color:var(--run)}.chip.brick{border-left-color:var(--brick)}.chip.strength{border-left-color:var(--strength)}
+.chip.swim{border-left-color:var(--swim)}.chip.bike{border-left-color:var(--bike)}.chip.run{border-left-color:var(--run)}.chip.strength{border-left-color:var(--strength)}
 .chip div{min-width:0;flex:1}
 .chip b{display:block;font-size:14px;overflow-wrap:anywhere}
 .chip small{display:block;color:var(--mute);font-size:12px}
@@ -105,10 +105,12 @@ dialog textarea{resize:vertical}
 .wt small{color:var(--mute);font-size:11px}
 .sb{display:flex;height:5px;border-radius:3px;overflow:hidden;background:var(--line);margin-top:3px}
 @media(max-width:520px){.mc{padding:2px;min-height:48px}.dots i{width:7px;height:7px}.month{gap:3px}.totals{grid-template-columns:repeat(2,minmax(0,1fr))}.tc:first-child{grid-column:1/-1}.tc small{white-space:nowrap}}
-.sl{font-size:10px;font-weight:700;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-right:4px;vertical-align:1px}
+
 .chip.ins{box-shadow:0 -4px 0 0 var(--acc)}
 .day.insend{box-shadow:inset 0 -4px 0 var(--acc)}
-@media(max-width:820px){.week{grid-template-columns:1fr}.day{min-height:0}}
+.rest{color:var(--mute);font-size:13px;font-style:italic}
+.rest-i{display:none}
+@media(max-width:820px){.week{grid-template-columns:1fr}.day{min-height:0}.rest-i{display:inline;margin-right:4px}.rest-b{display:none}}
 </style>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
@@ -153,7 +155,7 @@ dialog textarea{resize:vertical}
   <div class="r2">
     <label class="f" style="grid-column:1/-1">Date<input type="date" id="f-date"></label>
     <div class="f" style="grid-column:1/-1">Sport<div class="pk" id="p-sport"></div></div>
-    <div class="f" style="grid-column:1/-1">Time of day (optional)<div class="pk" id="p-slot"></div></div>
+    
   </div>
   <label class="f">Title<input id="f-title" placeholder="e.g. Threshold intervals"></label>
   <div class="r2">
@@ -162,8 +164,8 @@ dialog textarea{resize:vertical}
     
     
   </div>
-  <label class="f">Workout details<textarea id="f-details" rows="3" placeholder="e.g. 5 × 4 min at threshold, 2 min easy"></textarea></label>
-  <label class="f">Notes<textarea id="f-notes" rows="3" placeholder="e.g. Felt strong, legs heavy on the last interval"></textarea></label>
+  <label class="f">Workout details<textarea id="f-details" rows="4" placeholder="e.g. 5 × 4 min at threshold, 2 min easy"></textarea></label>
+  
   <label class="f" style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="f-done" style="width:auto"> Completed</label>
   <div class="btns"><button class="danger" id="del">Delete</button><span class="sp"></span><button data-close>Cancel</button><button class="pri" id="save">Save</button></div>
 </dialog>
@@ -194,7 +196,7 @@ dialog textarea{resize:vertical}
 
 <script>
 const $=s=>document.querySelector(s);
-const SPORTS={swim:["🏊","Swim"],bike:["🚴","Bike"],run:["🏃","Run"],brick:["🔁","Brick"],strength:["💪","Strength"],other:["🧘","Other"]};
+const SPORTS={swim:["🏊","Swim"],bike:["🚴","Bike"],run:["🏃","Run"],strength:["💪","Strength"],other:["🧘","Other"]};
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const add=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
 const monday=d=>add(d,-((d.getDay()+6)%7));
@@ -299,14 +301,14 @@ function persist(months,races){
 const chip=s=>{
   const [e,l]=SPORTS[s.sport]||SPORTS.other;
   const meta=[s.dur&&s.dur+" min",s.dist&&s.dist+" km"].filter(Boolean).join(" · ");
-  return `<div class="chip ${s.sport}${s.done?" done":""}" data-edit="${s.id}"><button class="tick" data-tick="${s.id}" aria-label="Toggle completed">${s.done?"✓":""}</button><div><b>${s.slot?`<span class="sl">${s.slot}</span>`:""}${e} ${esc(s.title||l)}${s.details&&s.notes?" 📝":""}</b>${meta?`<small>${esc(meta)}</small>`:""}${s.details||s.notes?`<em>${esc(s.details||s.notes)}</em>`:""}</div></div>`;
+  return `<div class="chip ${s.sport}${s.done?" done":""}" data-edit="${s.id}"><button class="tick" data-tick="${s.id}" aria-label="Toggle completed">${s.done?"✓":""}</button><div><b>${e} ${esc(s.title||l)}</b>${meta?`<small>${esc(meta)}</small>`:""}${s.details||s.notes?`<em>${esc(s.details||s.notes)}</em>`:""}</div></div>`;
 };
 
 function render(){renderHero();$("main").classList.toggle("mv",view=="month");$("#vw").classList.toggle("on",view=="week");$("#vm").classList.toggle("on",view=="month");if(view=="month"){renderMonth();return}
-  const now=iso(new Date()),m0=monday(new Date()),fmt=d=>d.toLocaleDateString(undefined,{day:"numeric",month:"short"});
+  S.sessions.forEach(s=>{if(!SPORTS[s.sport])s.sport="other"});const now=iso(new Date()),m0=monday(new Date()),fmt=d=>d.toLocaleDateString(undefined,{day:"numeric",month:"short"});
   const dayHTML=d=>{
-    const k=iso(d),rs=S.races.filter(r=>r.date==k),ss=S.sessions.filter(s=>s.date==k);
-    return `<section class="day${k==now?" today":""}" data-date="${k}"><header><b>${d.toLocaleDateString(undefined,{weekday:"short"})}</b><span>${d.getDate()} ${d.toLocaleDateString(undefined,{month:"short"})}</span><button class="add" data-add="${k}" aria-label="Add session">+</button></header>${rs.map(r=>`<div class="race${r.primary?" pri":""}">${r.primary?"★":"🏁"} ${esc(r.name)}</div>`).join("")}${ss.map(chip).join("")}</section>`;
+    const k=iso(d),rs=S.races.filter(r=>r.date==k),ss=S.sessions.filter(s=>s.date==k),em=!ss.length&&!rs.length;
+    return `<section class="day${k==now?" today":""}" data-date="${k}"><header><b>${d.toLocaleDateString(undefined,{weekday:"short"})}</b><span>${d.getDate()} ${d.toLocaleDateString(undefined,{month:"short"})}</span>${em?`<em class="rest rest-i">Rest day</em>`:""}<button class="add" data-add="${k}" aria-label="Add session">+</button></header>${em?`<div class="rest rest-b">Rest day</div>`:""}${rs.map(r=>`<div class="race${r.primary?" pri":""}">${r.primary?"★":"🏁"} ${esc(r.name)}</div>`).join("")}${ss.map(chip).join("")}</section>`;
   };
   const B=[0,1].map(n=>{
     const st=add(ws,7*n),days=[0,1,2,3,4,5,6].map(i=>add(st,i)),a=iso(days[0]),b=iso(days[6]),off=Math.round((st-m0)/6048e5);
@@ -351,29 +353,23 @@ function renderMonth(){
   $("#sum").textContent=ms.length+" sessions done this month · "+hm(sd_(ms,"dur"))+" · "+km(sd_(ms,"dist"));
   $("#month").innerHTML=h+`<p class="foot" style="grid-column:1/-1">Filled dots are completed sessions and hollow dots are still planned. Tap a day or a week total to open that week.</p>`;
 }
-pk("p-slot","slot",[["AM","☀️ AM"],["PM","🌙 PM"]]);
+
 function lastIdx(d){for(let i=S.sessions.length-1;i>=0;i--)if(S.sessions[i].date==d)return i;return -1}
-function place(s){
-  if(s.slot!="AM"&&s.slot!="PM")return;
-  S.sessions=S.sessions.filter(x=>x!==s);
-  const f=s.slot=="AM"?S.sessions.find(x=>x.date==s.date&&x.slot!="AM"):null;
-  const i=f?S.sessions.indexOf(f):(lastIdx(s.date)+1||S.sessions.length);
-  S.sessions.splice(i,0,s);
-}
+
 function openS(id,date){
   const s=S.sessions.find(x=>x.id==id)||{date:date,sport:"run"};
   editing=id||null;
   $("#sdt").textContent=id?"Edit session":"New session";
   $("#f-date").value=s.date;pv.sport=s.sport;$("#f-title").value=s.title||"";
-  $("#f-dur").value=s.dur||"";$("#f-dist").value=s.dist||"";pv.slot=s.slot||"";
-  $("#f-details").value=s.details||"";$("#f-notes").value=s.notes||"";$("#f-done").checked=!!s.done;markPk();
+  $("#f-dur").value=s.dur||"";$("#f-dist").value=s.dist||"";
+  $("#f-details").value=[s.details,s.notes].filter(Boolean).join("\n");$("#f-done").checked=!!s.done;markPk();
   $("#del").hidden=!id;$("#sd").showModal();
 }
 $("#save").onclick=()=>{
-  const v={date:$("#f-date").value,sport:pv.sport,title:$("#f-title").value.trim(),dur:parseInt($("#f-dur").value)||0,dist:parseFloat($("#f-dist").value)||0,slot:pv.slot,details:$("#f-details").value.trim(),notes:$("#f-notes").value.trim(),done:$("#f-done").checked};
+  const v={date:$("#f-date").value,sport:pv.sport,title:$("#f-title").value.trim(),dur:parseInt($("#f-dur").value)||0,dist:parseFloat($("#f-dist").value)||0,details:$("#f-details").value.trim(),notes:"",slot:"",done:$("#f-done").checked};
   if(!v.date)return;
   const old=S.sessions.find(x=>x.id==editing),months=new Set([v.date.slice(0,7)]);
-  let s;if(old){months.add(old.date.slice(0,7));const ch=(old.slot||"")!=v.slot||old.date!=v.date;Object.assign(old,v);s=old;if(ch)place(s)}else{s=Object.assign({id:uid()},v);S.sessions.push(s);place(s)}
+  if(old){months.add(old.date.slice(0,7));Object.assign(old,v)}else S.sessions.push(Object.assign({id:uid()},v));
   persist([...months]);$("#sd").close();render();
 };
 $("#del").onclick=()=>{
