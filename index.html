@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Training planner</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E🏊%3C/text%3E%3C/svg%3E">
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#16181d;--mute:#6b7280;--line:#e3e6ea;--acc:#0b6bcb;--swim:#2a8bd8;--bike:#e8872b;--run:#2fa66a;--brick:#8a5cd6;--strength:#d6567a;--other:#7a8594;color-scheme:light}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111317;--card:#1b1e24;--ink:#eceef2;--mute:#9aa3b0;--line:#2c313a;--acc:#5aa9f5;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111317;--card:#1b1e24;--ink:#eceef2;--mute:#9aa3b0;--line:#2c313a;--acc:#5aa9f5;color-scheme:dark}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1200px;margin:0 auto;padding:16px}
+.top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:6px}
+h1{font-size:20px;margin:0}
+.nav{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button.danger{color:#d64545}
+#range{font-weight:600;min-width:150px;text-align:center}
+.sub{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--mute);font-size:13px;margin-bottom:12px}
+.week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.day{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px;min-height:150px;display:flex;flex-direction:column;gap:6px}
+.day.today{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.day header{display:flex;align-items:baseline;gap:6px}
+.day header span{color:var(--mute);font-size:13px;flex:1}
+.add{padding:0 9px;font-size:18px;line-height:26px}
+.race{background:#f5c84233;border:1px solid #f5c842;border-radius:8px;padding:3px 8px;font-size:13px;font-weight:600}
+.chip{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);border-left:4px solid var(--other);border-radius:8px;padding:6px 8px;cursor:pointer;background:var(--bg)}
+.chip.swim{border-left-color:var(--swim)}.chip.bike{border-left-color:var(--bike)}.chip.run{border-left-color:var(--run)}.chip.brick{border-left-color:var(--brick)}.chip.strength{border-left-color:var(--strength)}
+.chip div{min-width:0;flex:1}
+.chip b{display:block;font-size:14px;overflow-wrap:anywhere}
+.chip small{display:block;color:var(--mute);font-size:12px}
+.chip em{display:block;font-style:normal;font-size:12px;margin-top:2px;overflow-wrap:anywhere;opacity:.85}
+.chip.done{opacity:.6}.chip.done b{text-decoration:line-through}
+.tick{width:30px;height:30px;padding:0;border-radius:50%;flex:none;font-size:15px;line-height:28px;touch-action:manipulation}
+.chip.done .tick{background:var(--run);border-color:var(--run);color:#fff}
+.foot{color:var(--mute);font-size:12px;margin-top:12px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--card);color:var(--ink);width:min(440px,92vw);padding:18px}
+dialog::backdrop{background:#0007}
+dialog h2{margin:0 0 12px;font-size:17px}
+.f{display:grid;gap:3px;margin-bottom:10px;font-size:13px;color:var(--mute)}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input,select,textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 8px;width:100%}
+.btns{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+.btns .sp{flex:1}
+.rrow{display:flex;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.rrow span{flex:1}
+.chip{cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.chip.dragging{opacity:.3}
+.chip.ghost{position:fixed;z-index:1000;pointer-events:none;box-shadow:0 8px 24px #0006;transform:rotate(1.5deg);cursor:grabbing}
+.day.over{outline:2px dashed var(--acc);outline-offset:-2px}
+.hero{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 20px;margin-bottom:12px}
+.hl{color:var(--mute);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.hn{display:block;font-size:22px;overflow-wrap:anywhere}
+.hs{color:var(--mute);font-size:14px}
+.hc{display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+.hbig{font-size:clamp(52px,12vw,96px);font-weight:800;color:var(--acc);font-variant-numeric:tabular-nums}
+.hu{color:var(--mute);font-size:14px;margin-top:4px}
+.hw{color:var(--mute);font-size:13px;margin-top:2px}
+.more{display:flex;flex-wrap:wrap;gap:6px 16px;color:var(--mute);font-size:13px;margin:-4px 4px 12px}
+.sh{font-size:13px;color:var(--mute);margin:10px 0 6px}
+.totals{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:6px}
+.tc{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--c);border-radius:10px;padding:6px 9px}
+.th{font-weight:600;font-size:12px}
+.tt{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 6px;font-size:18px;font-weight:700;line-height:1.25;margin-top:1px;font-variant-numeric:tabular-nums}
+.td{font-size:12px;font-weight:500;color:var(--mute);font-variant-numeric:tabular-nums}
+.tb{height:4px;border-radius:2px;background:var(--line);margin:5px 0 4px;overflow:hidden}
+.tb i{display:block;height:100%;background:var(--c);border-radius:3px}
+.tc small{color:var(--mute);font-size:11px}
+dialog{padding:20px;max-height:90vh;max-height:90dvh;overflow:auto;border-radius:16px}
+dialog h2{font-size:19px;margin-bottom:14px}
+dialog textarea{resize:vertical}
+.pk{display:flex;flex-wrap:wrap;gap:6px}
+.pk button{padding:6px 11px;min-width:40px;border-radius:999px;font-size:14px}
+.pk button.on{background:var(--c,var(--acc));border-color:var(--c,var(--acc));color:#fff}
+.race.pri{background:#f5c842;color:#2b2200}
+.star{padding:2px 8px;font-size:18px;line-height:1.2}
+.star.on{color:#e0a800;border-color:#e0a800}
+.more{gap:8px;margin:-4px 0 12px}
+.mr{display:flex;align-items:baseline;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px 12px;color:var(--ink)}
+.mr b{font-size:20px;color:var(--acc)}
+.mr small{color:var(--mute);font-size:12px}
+.mr span{font-size:13px;margin-left:4px}
+.nav .on{background:var(--acc);border-color:var(--acc);color:#fff}
+#month{display:none}
+.mv #week,.mv #week2,.mv .sh,.mv .wl,.mv #totals,.mv #totals2{display:none}
+.wl{font-size:16px;margin:18px 0 8px}
+.mv #month{display:grid}
+.month{grid-template-columns:repeat(7,minmax(0,1fr)) minmax(72px,1.4fr);gap:4px}
+.mh{color:var(--mute);font-size:12px;text-align:center;padding:2px}
+.mc{background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:56px;padding:4px;cursor:pointer;position:relative}
+.mc.out{opacity:.45}
+.mc.today{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc)}
+.mn{font-size:12px;font-weight:600}
+.mf{position:absolute;top:2px;right:3px;font-size:11px}
+.dots{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+.dots i{width:9px;height:9px;border-radius:50%;border:2px solid var(--c)}
+.dots i.dn{background:var(--c)}
+.wt{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 6px;cursor:pointer;display:flex;flex-direction:column;gap:1px;font-size:12px}
+.wt b{font-size:13px}
+.wt small{color:var(--mute);font-size:11px}
+.sb{display:flex;height:5px;border-radius:3px;overflow:hidden;background:var(--line);margin-top:3px}
+@media(max-width:520px){.mc{padding:2px;min-height:48px}.dots i{width:7px;height:7px}.month{gap:3px}.totals{grid-template-columns:repeat(2,minmax(0,1fr))}.tc:first-child{grid-column:1/-1}.tc small{white-space:nowrap}}
+.sl{font-size:10px;font-weight:700;color:var(--mute);border:1px solid var(--line);border-radius:4px;padding:0 4px;margin-right:4px;vertical-align:1px}
+.chip.ins{box-shadow:0 -4px 0 0 var(--acc)}
+.day.insend{box-shadow:inset 0 -4px 0 var(--acc)}
+@media(max-width:820px){.week{grid-template-columns:1fr}.day{min-height:0}}
+</style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111317" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Training">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+</head>
+<body>
+<main>
+  <div id="hero"></div>
+  <div class="top">
+    <h1>🏊 🚴 🏃 Training planner</h1>
+    <div class="nav">
+      <button id="prev" aria-label="Previous week">‹</button>
+      <span id="range"></span>
+      <button id="next" aria-label="Next week">›</button>
+      <button id="today">Today</button>
+      <button id="vw" class="on">Week</button><button id="vm">Month</button>
+      <button id="races">🏁 Races</button>
+      <button id="sync">☁ Sync</button>
+    </div>
+  </div>
+  <div class="sub"><span id="sum"></span><span id="status"></span></div>
+  <h2 class="wl" id="wl1"></h2>
+  <div class="week" id="week"></div>
+  <div class="month" id="month"></div>
+  <h2 class="sh">Completed</h2>
+  <div class="totals" id="totals"></div>
+  <h2 class="wl" id="wl2"></h2>
+  <div class="week" id="week2"></div>
+  <h2 class="sh">Completed</h2>
+  <div class="totals" id="totals2"></div>
+  <p class="foot">Tap + on a day to add a session, tap a session to edit it, and tap the circle to mark it done.</p>
+</main>
+
+<dialog id="sd">
+  <h2 id="sdt">Session</h2>
+  <div class="r2">
+    <label class="f" style="grid-column:1/-1">Date<input type="date" id="f-date"></label>
+    <div class="f" style="grid-column:1/-1">Sport<div class="pk" id="p-sport"></div></div>
+    <div class="f" style="grid-column:1/-1">Time of day (optional)<div class="pk" id="p-slot"></div></div>
+  </div>
+  <label class="f">Title<input id="f-title" placeholder="e.g. Threshold intervals"></label>
+  <div class="r2">
+    <label class="f">Duration (min)<input type="number" id="f-dur" min="0" inputmode="numeric"></label>
+    <label class="f">Distance (km)<input type="number" id="f-dist" min="0" step="0.1" inputmode="decimal"></label>
+    
+    
+  </div>
+  <label class="f">Workout details<textarea id="f-details" rows="3" placeholder="e.g. 5 × 4 min at threshold, 2 min easy"></textarea></label>
+  <label class="f">Notes<textarea id="f-notes" rows="3" placeholder="e.g. Felt strong, legs heavy on the last interval"></textarea></label>
+  <label class="f" style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="f-done" style="width:auto"> Completed</label>
+  <div class="btns"><button class="danger" id="del">Delete</button><span class="sp"></span><button data-close>Cancel</button><button class="pri" id="save">Save</button></div>
+</dialog>
+
+<dialog id="rd">
+  <h2>Races</h2><p class="foot" style="margin:-6px 0 10px">Add as many races as you like. Star one as your primary race to feature it in the big countdown.</p>
+  <div id="rlist"></div>
+  <div class="r2" style="margin-top:12px">
+    <label class="f">Race<input id="r-name" placeholder="e.g. Noosa Triathlon"></label>
+    <label class="f">Date<input type="date" id="r-date"></label>
+  </div>
+  <label class="f" style="display:flex;gap:8px;align-items:center;color:var(--ink)"><input type="checkbox" id="r-pri" style="width:auto"> Make this my primary race</label>
+  <div class="btns"><button data-close>Close</button><button class="pri" id="radd">Add race</button></div>
+</dialog>
+
+<dialog id="gd">
+  <h2>Sync with GitHub</h2>
+  <p class="foot" style="margin:-6px 0 10px">Your plan is saved as a JSON file in your repository. Enter these once on each device. The token stays on this device only and is never stored in the page.</p>
+  <label class="f">Repository (owner/name)<input id="g-repo" placeholder="you/triathlon-planner" autocapitalize="off" autocomplete="off"></label>
+  <div class="r2">
+    <label class="f">Branch<input id="g-branch" value="main" autocapitalize="off"></label>
+    <label class="f">File path<input id="g-path" value="data.json" autocapitalize="off"></label>
+  </div>
+  <label class="f">Fine-grained access token<input id="g-token" type="password" autocomplete="off"></label>
+  <p class="foot" id="g-msg"></p>
+  <div class="btns"><button class="danger" id="g-off">Disconnect</button><span class="sp"></span><button data-close>Close</button><button class="pri" id="g-save">Save &amp; sync</button></div>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const SPORTS={swim:["🏊","Swim"],bike:["🚴","Bike"],run:["🏃","Run"],brick:["🔁","Brick"],strength:["💪","Strength"],other:["🧘","Other"]};
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const add=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const monday=d=>add(d,-((d.getDay()+6)%7));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const hm=m=>Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m";
+const esc=t=>String(t==null?"":t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let S={sessions:[],races:[]},ws=monday(new Date()),coll=null,editing=null,inflight=0,hold=0;
+
+function setStatus(t){$("#status").textContent=t}
+/* ---- GitHub sync: the plan is stored as one JSON file in a repo; each item carries an updated time (u) and deletions leave tombstones (del) so devices merge instead of overwriting ---- */
+let gh=null,syncing=false,again=false,BASE={sessions:[],races:[]},pushT=null;
+const ghCfg=()=>{try{const c=JSON.parse(localStorage.getItem("tri-gh"));return c&&c.repo&&c.token?c:null}catch(e){return null}};
+const b64e=t=>{const b=new TextEncoder().encode(t);let r="";for(let i=0;i<b.length;i+=8192)r+=String.fromCharCode.apply(null,b.subarray(i,i+8192));return btoa(r)};
+const b64d=t=>new TextDecoder().decode(Uint8Array.from(atob(t.replace(/\s/g,"")),c=>c.charCodeAt(0)));
+const clone=o=>JSON.parse(JSON.stringify(o));
+const fp=x=>JSON.stringify(Object.assign({},x,{u:0}));
+const snapOf=a=>JSON.stringify([a.sessions,a.races,a.del]);
+function stamp(){
+  S.del=S.del||{};const now=Date.now();
+  ["sessions","races"].forEach(k=>{
+    const b=new Map((BASE[k]||[]).map(x=>[x.id,fp(x)]));
+    S[k].forEach(x=>{if(b.get(x.id)!==fp(x))x.u=now});
+    (BASE[k]||[]).forEach(x=>{if(!S[k].some(y=>y.id==x.id))S.del[x.id]=now});
+  });
+}
+function merge(L,R){
+  const del=Object.assign({},R.del);for(const id in L.del)del[id]=Math.max(del[id]||0,L.del[id]);
+  const cut=Date.now()-1.2e10;for(const id in del)if(del[id]<cut)delete del[id];
+  const o={sessions:[],races:[],del:del};
+  ["sessions","races"].forEach(k=>{
+    const a=L[k]||[],b=R[k]||[],mx=l=>l.reduce((m,x)=>Math.max(m,x.u||0),0),pa=mx(b)>mx(a)?b:a,sa=pa===a?b:a;
+    const sm=new Map(sa.map(x=>[x.id,x])),seen=new Set(),ok=x=>!(x.id in del)||del[x.id]<(x.u||0);
+    pa.forEach(x=>{const y=sm.get(x.id),w=y&&(y.u||0)>(x.u||0)?y:x;seen.add(x.id);if(ok(w))o[k].push(w)});
+    sa.forEach(y=>{if(!seen.has(y.id)&&ok(y))o[k].push(y)});
+  });
+  return o;
+}
+const ghUrl=()=>"https://api.github.com/repos/"+gh.repo+"/contents/"+gh.path.split("/").map(encodeURIComponent).join("/");
+const ghHdr=()=>({Authorization:"Bearer "+gh.token,Accept:"application/vnd.github+json"});
+async function ghGet(){
+  const r=await fetch(ghUrl()+"?ref="+encodeURIComponent(gh.branch)+"&t="+Date.now(),{headers:ghHdr(),cache:"no-store"});
+  if(r.status==404)return{sha:null,data:{sessions:[],races:[],del:{}}};
+  if(!r.ok)throw{status:r.status};
+  const j=await r.json();
+  return{sha:j.sha,data:Object.assign({sessions:[],races:[],del:{}},JSON.parse(b64d(j.content)))};
+}
+async function ghPut(data,sha){
+  const body={message:"Update training plan",content:b64e(JSON.stringify(data)),branch:gh.branch};if(sha)body.sha=sha;
+  const r=await fetch(ghUrl(),{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},ghHdr()),body:JSON.stringify(body)});
+  if(r.status==409||r.status==422)return{conflict:true};
+  if(!r.ok)throw{status:r.status};
+  return{ok:true};
+}
+async function sync(){
+  if(!gh)return;
+  if(syncing){again=true;return}
+  syncing=true;
+  try{
+    setStatus("Syncing…");let done=false;
+    for(let t=0;t<4&&!done;t++){
+      S.del=S.del||{};
+      const r=await ghGet(),m=merge(S,r.data),pull=snapOf(m)!=snapOf(S),push=snapOf(m)!=snapOf(r.data);
+      S=m;
+      if(pull){render();try{localStorage.setItem("tri",JSON.stringify(S))}catch(e){}}
+      if(push){const p=await ghPut(S,r.sha);if(p.conflict)continue}
+      done=true;
+    }
+    if(!done)throw{status:0};
+    BASE=clone(S);
+    setStatus("Synced with GitHub at "+new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}));
+  }catch(e){
+    const c=e&&e.status;
+    setStatus(c==401||c==403?"GitHub rejected the token. Check Sync settings.":c==404?"Repository not found, or the token has no access to it.":"Offline or busy. Changes are saved on this device and will sync when possible.");
+  }finally{syncing=false;if(again){again=false;sync()}}
+}
+function dirtyPush(){clearTimeout(pushT);setStatus("Unsynced changes…");pushT=setTimeout(sync,1200)}
+document.addEventListener("visibilitychange",()=>{if(gh&&!document.hidden)sync()});
+addEventListener("online",()=>{if(gh)sync()});
+setInterval(()=>{if(gh&&!document.hidden)sync()},60000);
+$("#sync").onclick=()=>{const c=ghCfg()||{};$("#g-repo").value=c.repo||"";$("#g-branch").value=c.branch||"main";$("#g-path").value=c.path||"data.json";$("#g-token").value="";$("#g-token").placeholder=c.token?"Saved on this device. Leave blank to keep it.":"github_pat_…";$("#g-msg").textContent=gh?"Connected to "+gh.repo+".":"Not connected.";$("#gd").showModal()};
+$("#g-save").onclick=()=>{
+  const old=ghCfg()||{},repo=$("#g-repo").value.trim().replace(/^https?:\/\/github\.com\//,"").replace(/\/$/,""),token=$("#g-token").value.trim()||old.token;
+  if(!/^[\w.-]+\/[\w.-]+$/.test(repo)||!token){$("#g-msg").textContent="Enter the repository as owner/name and paste a token.";return}
+  gh={repo:repo,branch:$("#g-branch").value.trim()||"main",path:$("#g-path").value.trim()||"data.json",token:token};
+  try{localStorage.setItem("tri-gh",JSON.stringify(gh))}catch(e){}
+  $("#gd").close();sync();
+};
+$("#g-off").onclick=()=>{try{localStorage.removeItem("tri-gh")}catch(e){}gh=null;setStatus("Saved on this device only");$("#gd").close()};
+
+function loadLocal(){try{const x=JSON.parse(localStorage.getItem("tri"));if(x&&x.sessions)S=x}catch(e){}}
+function persist(months,races){
+  if(coll){
+    const fail=()=>setStatus("Could not save — check your connection");
+    const wr=(ref,data)=>{inflight++;let d=0;const fin=()=>{if(d)return;d=1;inflight--;hold=Date.now()+700};setTimeout(fin,10000);ref.set(data).catch(fail).then(fin)};
+    try{
+      months.forEach(m=>wr(coll.doc("s-"+m),{items:S.sessions.filter(s=>s.date.slice(0,7)==m)}));
+      if(races)wr(coll.doc("races"),{items:S.races});
+    }catch(e){fail()}
+  }else{stamp();try{localStorage.setItem("tri",JSON.stringify(S))}catch(e){}if(gh)dirtyPush()}
+}
+
+const chip=s=>{
+  const [e,l]=SPORTS[s.sport]||SPORTS.other;
+  const meta=[s.dur&&s.dur+" min",s.dist&&s.dist+" km"].filter(Boolean).join(" · ");
+  return `<div class="chip ${s.sport}${s.done?" done":""}" data-edit="${s.id}"><button class="tick" data-tick="${s.id}" aria-label="Toggle completed">${s.done?"✓":""}</button><div><b>${s.slot?`<span class="sl">${s.slot}</span>`:""}${e} ${esc(s.title||l)}${s.details&&s.notes?" 📝":""}</b>${meta?`<small>${esc(meta)}</small>`:""}${s.details||s.notes?`<em>${esc(s.details||s.notes)}</em>`:""}</div></div>`;
+};
+
+function render(){renderHero();$("main").classList.toggle("mv",view=="month");$("#vw").classList.toggle("on",view=="week");$("#vm").classList.toggle("on",view=="month");if(view=="month"){renderMonth();return}
+  const now=iso(new Date()),m0=monday(new Date()),fmt=d=>d.toLocaleDateString(undefined,{day:"numeric",month:"short"});
+  const dayHTML=d=>{
+    const k=iso(d),rs=S.races.filter(r=>r.date==k),ss=S.sessions.filter(s=>s.date==k);
+    return `<section class="day${k==now?" today":""}" data-date="${k}"><header><b>${d.toLocaleDateString(undefined,{weekday:"short"})}</b><span>${d.getDate()} ${d.toLocaleDateString(undefined,{month:"short"})}</span><button class="add" data-add="${k}" aria-label="Add session">+</button></header>${rs.map(r=>`<div class="race${r.primary?" pri":""}">${r.primary?"★":"🏁"} ${esc(r.name)}</div>`).join("")}${ss.map(chip).join("")}</section>`;
+  };
+  const B=[0,1].map(n=>{
+    const st=add(ws,7*n),days=[0,1,2,3,4,5,6].map(i=>add(st,i)),a=iso(days[0]),b=iso(days[6]),off=Math.round((st-m0)/6048e5);
+    return{days:days,wk:S.sessions.filter(s=>s.date>=a&&s.date<=b),label:(off==0?"This week · ":off==1?"Next week · ":off==-1?"Last week · ":"")+fmt(days[0])+" – "+fmt(days[6])};
+  });
+  const all=B[0].wk.concat(B[1].wk),sum=f=>all.filter(f).reduce((t,s)=>t+(+s.dur||0),0);
+  $("#range").textContent=fmt(B[0].days[0])+" – "+B[1].days[6].toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"});
+  $("#sum").textContent=all.length+" sessions in view · planned "+hm(sum(()=>1))+" · done "+hm(sum(s=>s.done));
+  [["#wl1","#week","#totals"],["#wl2","#week2","#totals2"]].forEach((t,n)=>{$(t[0]).textContent=B[n].label;$(t[1]).innerHTML=B[n].days.map(dayHTML).join("");renderTotals(B[n].wk,t[2])});
+}
+
+const km=x=>x?(Math.round(x*10)/10)+" km":"–";
+function renderTotals(wk,id){
+  const card=(c,h,l)=>{
+    const d=l.filter(s=>s.done),t=d.reduce((a,s)=>a+(+s.dur||0),0),p=l.reduce((a,s)=>a+(+s.dur||0),0),k=d.reduce((a,s)=>a+(+s.dist||0),0);
+    return `<div class="tc" style="--c:${c}"><div class="th">${h}</div><div class="tt">${hm(t)}${k?`<span class="td">${km(k)}</span>`:""}</div><div class="tb"><i style="width:${p?Math.min(100,Math.round(t/p*100)):0}%"></i></div><small>${d.length}/${l.length} done · plan ${hm(p)}</small></div>`;
+  };
+  $(id||"#totals").innerHTML=card("var(--acc)","Total",wk)+Object.keys(SPORTS).filter(k=>wk.some(s=>s.sport==k)).map(k=>card("var(--"+k+")",SPORTS[k][0]+" "+SPORTS[k][1],wk.filter(s=>s.sport==k))).join("");
+}
+let pv={sport:"run"},view="week",mo=new Date(new Date().getFullYear(),new Date().getMonth(),1);
+const pk=(id,k,a)=>{$("#"+id).innerHTML=a.map(x=>`<button type="button" data-pk="${k}" data-v="${x[0]}"${k=="sport"?` style="--c:var(--${x[0]})"`:""}>${x[1]}</button>`).join("")};
+pk("p-sport","sport",Object.keys(SPORTS).map(k=>[k,SPORTS[k][0]+" "+SPORTS[k][1]]));
+
+
+function markPk(){document.querySelectorAll("#sd [data-pk]").forEach(b=>b.classList.toggle("on",String(pv[b.dataset.pk])==b.dataset.v))}
+$("#sd").addEventListener("click",e=>{const b=e.target.closest("[data-pk]");if(!b)return;const k=b.dataset.pk,v=b.dataset.v;if(k=="sport")pv.sport=v;else pv[k]=String(pv[k])==v?(k=="rpe"?0:""):(k=="rpe"?+v:v);markPk()});
+$("#rlist").onclick=e=>{const b=e.target.closest("[data-rpri]");if(!b)return;const r=S.races.find(x=>x.id==b.dataset.rpri);if(!r)return;const on=!r.primary;S.races.forEach(x=>x.primary=false);r.primary=on;persist([],true);renderRaces();render()};
+$("#vw").onclick=()=>{view="week";render()};
+$("#vm").onclick=()=>{view="month";const m=add(ws,3);mo=new Date(m.getFullYear(),m.getMonth(),1);render()};
+$("#month").onclick=e=>{const g=e.target.closest("[data-goto]");if(g){ws=monday(parse(g.dataset.goto));view="week";render();scrollTo(0,0)}};
+const sd_=(l,f)=>l.reduce((a,s)=>a+(+s[f]||0),0);
+function renderMonth(){
+  const first=mo,last=new Date(mo.getFullYear(),mo.getMonth()+1,0),start=monday(first),weeks=Math.ceil((Math.round((last-start)/864e5)+1)/7),now=iso(new Date());
+  let h=["Mon","Tue","Wed","Thu","Fri","Sat","Sun","Week"].map(x=>`<div class="mh">${x}</div>`).join("");
+  for(let w=0;w<weeks;w++){
+    const days=[0,1,2,3,4,5,6].map(i=>add(start,w*7+i)),a=iso(days[0]),b=iso(days[6]),wk=S.sessions.filter(s=>s.date>=a&&s.date<=b),dn=wk.filter(s=>s.done);
+    h+=days.map(d=>{const k=iso(d);return `<div class="mc${d.getMonth()!=first.getMonth()?" out":""}${k==now?" today":""}" data-goto="${k}"><span class="mn">${d.getDate()}</span>${S.races.some(r=>r.date==k)?`<span class="mf">🏁</span>`:""}<div class="dots">${S.sessions.filter(s=>s.date==k).map(s=>`<i class="${s.done?"dn":""}" style="--c:var(--${SPORTS[s.sport]?s.sport:"other"})"></i>`).join("")}</div></div>`}).join("");
+    h+=`<div class="wt" data-goto="${a}"><b>${hm(sd_(dn,"dur"))}</b><span>${km(sd_(dn,"dist"))}</span><small>of ${hm(sd_(wk,"dur"))}</small><div class="sb">${Object.keys(SPORTS).map(k=>{const m=sd_(dn.filter(s=>s.sport==k),"dur");return m?`<i style="flex:${m};background:var(--${k})"></i>`:""}).join("")}</div></div>`;
+  }
+  const ms=S.sessions.filter(s=>s.date.slice(0,7)==iso(first).slice(0,7)&&s.done);
+  $("#range").textContent=first.toLocaleDateString(undefined,{month:"long",year:"numeric"});
+  $("#sum").textContent=ms.length+" sessions done this month · "+hm(sd_(ms,"dur"))+" · "+km(sd_(ms,"dist"));
+  $("#month").innerHTML=h+`<p class="foot" style="grid-column:1/-1">Filled dots are completed sessions and hollow dots are still planned. Tap a day or a week total to open that week.</p>`;
+}
+pk("p-slot","slot",[["AM","☀️ AM"],["PM","🌙 PM"]]);
+function lastIdx(d){for(let i=S.sessions.length-1;i>=0;i--)if(S.sessions[i].date==d)return i;return -1}
+function place(s){
+  if(s.slot!="AM"&&s.slot!="PM")return;
+  S.sessions=S.sessions.filter(x=>x!==s);
+  const f=s.slot=="AM"?S.sessions.find(x=>x.date==s.date&&x.slot!="AM"):null;
+  const i=f?S.sessions.indexOf(f):(lastIdx(s.date)+1||S.sessions.length);
+  S.sessions.splice(i,0,s);
+}
+function openS(id,date){
+  const s=S.sessions.find(x=>x.id==id)||{date:date,sport:"run"};
+  editing=id||null;
+  $("#sdt").textContent=id?"Edit session":"New session";
+  $("#f-date").value=s.date;pv.sport=s.sport;$("#f-title").value=s.title||"";
+  $("#f-dur").value=s.dur||"";$("#f-dist").value=s.dist||"";pv.slot=s.slot||"";
+  $("#f-details").value=s.details||"";$("#f-notes").value=s.notes||"";$("#f-done").checked=!!s.done;markPk();
+  $("#del").hidden=!id;$("#sd").showModal();
+}
+$("#save").onclick=()=>{
+  const v={date:$("#f-date").value,sport:pv.sport,title:$("#f-title").value.trim(),dur:parseInt($("#f-dur").value)||0,dist:parseFloat($("#f-dist").value)||0,slot:pv.slot,details:$("#f-details").value.trim(),notes:$("#f-notes").value.trim(),done:$("#f-done").checked};
+  if(!v.date)return;
+  const old=S.sessions.find(x=>x.id==editing),months=new Set([v.date.slice(0,7)]);
+  let s;if(old){months.add(old.date.slice(0,7));const ch=(old.slot||"")!=v.slot||old.date!=v.date;Object.assign(old,v);s=old;if(ch)place(s)}else{s=Object.assign({id:uid()},v);S.sessions.push(s);place(s)}
+  persist([...months]);$("#sd").close();render();
+};
+$("#del").onclick=()=>{
+  const old=S.sessions.find(x=>x.id==editing);if(!old)return;
+  S.sessions=S.sessions.filter(x=>x!==old);persist([old.date.slice(0,7)]);$("#sd").close();render();
+};
+
+function renderRaces(){
+  const rs=[...S.races].sort((x,y)=>x.date<y.date?-1:1);
+  $("#rlist").innerHTML=rs.length?rs.map(r=>`<div class="rrow"><button class="star${r.primary?" on":""}" data-rpri="${r.id}" aria-label="Set as primary race" title="Set as primary race">${r.primary?"★":"☆"}</button><span><b>${esc(r.name)}</b> · ${esc(r.date)}${dleft(r.date)>=0?" · "+dleft(r.date)+" days":" · past"}</span><button class="danger" data-rdel="${r.id}">Remove</button></div>`).join(""):`<p class="foot">No races yet.</p>`;
+}
+$("#races").onclick=()=>{renderRaces();$("#rd").showModal()};
+$("#radd").onclick=()=>{
+  const name=$("#r-name").value.trim(),date=$("#r-date").value;if(!name||!date)return;
+  const nr={id:uid(),name:name,date:date,primary:$("#r-pri").checked};if(nr.primary)S.races.forEach(x=>x.primary=false);S.races.push(nr);persist([],true);$("#r-pri").checked=false;
+  $("#r-name").value="";$("#r-date").value="";renderRaces();render();
+};
+
+document.addEventListener("click",e=>{
+  const t=e.target.closest("[data-tick],[data-edit],[data-add],[data-rdel],[data-close]");if(!t)return;
+  if(t.dataset.close!==undefined){t.closest("dialog").close()}
+  else if(t.dataset.tick){const s=S.sessions.find(x=>x.id==t.dataset.tick);if(s){s.done=!s.done;persist([s.date.slice(0,7)]);render()}}
+  else if(t.dataset.edit){openS(t.dataset.edit)}
+  else if(t.dataset.add){openS(null,t.dataset.add)}
+  else if(t.dataset.rdel){S.races=S.races.filter(r=>r.id!=t.dataset.rdel);persist([],true);renderRaces();render()}
+});
+const parse=s=>{const p=s.split("-").map(Number);return new Date(p[0],p[1]-1,p[2])};
+const dleft=s=>{const n=new Date();return Math.round((parse(s)-new Date(n.getFullYear(),n.getMonth(),n.getDate()))/864e5)};
+function renderHero(){
+  const up=S.races.filter(r=>dleft(r.date)>=0).sort((x,y)=>x.date<y.date?-1:1);
+  if(!up.length){$("#hero").innerHTML='<div class="hero"><div><div class="hl">Next race</div><b class="hn">No race set yet</b></div><button class="pri">Add a race</button></div>';return}
+  const r=up.find(x=>x.primary)||up[0],n=dleft(r.date),rest=up.filter(x=>x!==r);
+  $("#hero").innerHTML=`<div class="hero"><div><div class="hl">${r.primary?"★ Primary race":"Next race"}</div><b class="hn">🏁 ${esc(r.name)}</b><div class="hs">${parse(r.date).toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div></div><div class="hc"><span class="hbig">${n==0?"Race day!":n}</span>${n==0?"":`<span class="hu">${n==1?"day":"days"} to go</span>`}${n>=7?`<span class="hw">${Math.floor(n/7)} wk ${n%7} d</span>`:""}</div></div>${rest.length?`<div class="more">${rest.slice(0,6).map(x=>`<div class="mr"><b>${dleft(x.date)}</b><small>days</small><span>${x.primary?"★ ":""}${esc(x.name)}</span></div>`).join("")}</div>`:""}`;
+}
+$("#hero").onclick=e=>{if(e.target.closest("button"))$("#races").click()};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)render()});
+
+/* drag and drop (mouse: drag; touch: press and hold, then drag) */
+let dr=null,sup=false;
+const dayAt=(x,y)=>{const el=document.elementFromPoint(x,y);return el&&el.closest(".day[data-date]")};
+function clearOver(){document.querySelectorAll(".day.over,.day.insend,.chip.ins").forEach(d=>d.classList.remove("over","insend","ins"))}
+function dropRef(day,cy,skip){return [...day.querySelectorAll(".chip")].filter(c=>c!==skip).find(c=>{const r=c.getBoundingClientRect();return cy<r.top+r.height/2})||null}
+function hover(){clearOver();const d=dayAt(dr.cx,dr.cy);if(d){d.classList.add("over");const r=dropRef(d,dr.cy,dr.c);if(r)r.classList.add("ins");else d.classList.add("insend")}}
+function startDrag(){
+  if(!dr||dr.on)return;
+  dr.on=true;clearTimeout(dr.t);
+  const r=dr.c.getBoundingClientRect(),g=dr.c.cloneNode(true);
+  g.classList.add("ghost");g.style.width=r.width+"px";g.style.left=r.left+"px";g.style.top=r.top+"px";
+  document.body.appendChild(g);dr.g=g;dr.ox=dr.x-r.left;dr.oy=dr.y-r.top;
+  dr.c.classList.add("dragging");
+  try{dr.c.setPointerCapture(dr.pid)}catch(_){}
+  try{navigator.vibrate&&navigator.vibrate(10)}catch(_){}
+  dr.iv=setInterval(()=>{if(!dr)return;if(dr.cy<80)scrollBy(0,-16);else if(dr.cy>innerHeight-80)scrollBy(0,16);hover()},40);
+}
+function endDrag(drop){
+  if(!dr)return;
+  const d=dr;dr=null;clearTimeout(d.t);
+  if(!d.on)return;
+  clearInterval(d.iv);d.g.remove();d.c.classList.remove("dragging");clearOver();
+  sup=true;setTimeout(()=>{sup=false},80);
+  if(!drop)return;
+  const t=dayAt(d.cx,d.cy),s=S.sessions.find(x=>x.id==d.id);
+  if(t&&s){const sig=()=>S.sessions.map(x=>x.id+x.date).join(),b4=sig(),m=s.date.slice(0,7),ref=dropRef(t,d.cy,d.c),rid=ref&&ref.dataset.edit;S.sessions=S.sessions.filter(x=>x!==s);s.date=t.dataset.date;let i=rid?S.sessions.findIndex(x=>x.id==rid):-1;if(i<0)i=lastIdx(s.date)+1||S.sessions.length;S.sessions.splice(i,0,s);if(sig()!=b4){s.u=Date.now();persist([...new Set([m,s.date.slice(0,7)])]);render()}}
+}
+document.addEventListener("pointerdown",e=>{
+  const c=e.target.closest(".chip");
+  if(!c||e.target.closest(".tick")||(e.pointerType=="mouse"&&e.button))return;
+  dr={id:c.dataset.edit,c:c,x:e.clientX,y:e.clientY,cx:e.clientX,cy:e.clientY,pid:e.pointerId,touch:e.pointerType!="mouse",on:false};
+  if(dr.touch)dr.t=setTimeout(startDrag,380);
+});
+document.addEventListener("pointermove",e=>{
+  if(!dr)return;
+  dr.cx=e.clientX;dr.cy=e.clientY;
+  if(!dr.on){const mv=Math.hypot(dr.cx-dr.x,dr.cy-dr.y);if(dr.touch){if(mv>10){clearTimeout(dr.t);dr=null}}else if(mv>5)startDrag();return}
+  dr.g.style.left=(dr.cx-dr.ox)+"px";dr.g.style.top=(dr.cy-dr.oy)+"px";hover();
+});
+document.addEventListener("pointerup",()=>endDrag(true));
+document.addEventListener("pointercancel",()=>endDrag(false));
+document.addEventListener("touchmove",e=>{if(dr&&dr.on)e.preventDefault()},{passive:false});
+document.addEventListener("contextmenu",e=>{if(dr&&dr.on)e.preventDefault()});
+document.addEventListener("click",e=>{if(sup){e.stopPropagation();e.preventDefault();sup=false}},true);
+
+$("#prev").onclick=()=>{if(view=="month")mo=new Date(mo.getFullYear(),mo.getMonth()-1,1);else ws=add(ws,-7);render()};
+$("#next").onclick=()=>{if(view=="month")mo=new Date(mo.getFullYear(),mo.getMonth()+1,1);else ws=add(ws,7);render()};
+$("#today").onclick=()=>{const n=new Date();ws=monday(n);mo=new Date(n.getFullYear(),n.getMonth(),1);render()};
+
+render();
+(async()=>{
+  let db=null,user=null,id=null;
+  try{if(window.claude){db=await claude.use("db");user=await claude.use("user");id=user?await user.id():null}}catch(e){}
+  if(db&&id){
+    coll=db.collection("data/users/"+id);$("#sync").hidden=true;
+    setStatus("Syncing…");
+    coll.onSnapshot(snap=>{if(inflight>0||Date.now()<hold)return;
+      const ss=[];let rc=[];
+      snap.docs.forEach(d=>{const it=(d.data()||{}).items||[];if(d.id=="races")rc=it;else if(d.id.indexOf("s-")==0)ss.push(...it)});
+      S={sessions:ss,races:rc};setStatus("Synced across your devices");render();
+    },()=>{coll=null;loadLocal();setStatus("Saved on this device only");render()});
+  }else{loadLocal();BASE=clone(S);gh=ghCfg();if(gh){setStatus("Connecting to GitHub…");render();sync()}else{setStatus("Saved on this device only");render()}}
+})();
+</script>
+<script>
+if("serviceWorker" in navigator&&location.protocol.indexOf("http")==0)addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+</script>
+</body>
+</html>
